@@ -8,7 +8,7 @@ variable "location" {
   type        = string
 }
 
-variable "mesh1" {
+variable "vnet_mesh1" {
   description = "Feature of mesh1"
   type        = any
   default = {
@@ -19,7 +19,7 @@ variable "mesh1" {
   }
 }
 
-variable "mesh2" {
+variable "vnet_mesh2" {
   description = "Feature of mesh2"
   type        = any
   default = {

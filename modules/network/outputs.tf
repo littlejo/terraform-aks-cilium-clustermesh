@@ -3,5 +3,5 @@ output "id" {
 }
 
 output "subnet_id" {
-  value = azurerm_subnet.node.id
+  value = azurerm_subnet.this.id
 }

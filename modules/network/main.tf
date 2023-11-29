@@ -5,7 +5,7 @@ resource "azurerm_virtual_network" "this" {
   location            = var.location
 }
 
-resource "azurerm_subnet" "node" {
+resource "azurerm_subnet" "this" {
   address_prefixes     = var.subnet_cidr
   name                 = var.subnet_name
   virtual_network_name = azurerm_virtual_network.this.name

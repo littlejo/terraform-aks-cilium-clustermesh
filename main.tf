@@ -6,26 +6,26 @@ module "vnet_1" {
   source              = "./modules/network"
   resource_group_name = var.resource_group_name
   location            = var.location
-  address_space       = var.mesh1.address_space
-  name                = var.mesh1.name
-  subnet_name         = var.mesh1.subnet_name
-  subnet_cidr         = var.mesh1.subnet_cidr
+  address_space       = var.vnet_mesh1.address_space
+  name                = var.vnet_mesh1.name
+  subnet_name         = var.vnet_mesh1.subnet_name
+  subnet_cidr         = var.vnet_mesh1.subnet_cidr
 }
 
 module "vnet_2" {
   source              = "./modules/network"
   resource_group_name = var.resource_group_name
   location            = var.location
-  address_space       = var.mesh2.address_space
-  name                = var.mesh2.name
-  subnet_name         = var.mesh2.subnet_name
-  subnet_cidr         = var.mesh2.subnet_cidr
+  address_space       = var.vnet_mesh2.address_space
+  name                = var.vnet_mesh2.name
+  subnet_name         = var.vnet_mesh2.subnet_name
+  subnet_cidr         = var.vnet_mesh2.subnet_cidr
 }
 
 module "peering" {
   source              = "./modules/peering"
-  vnet_1              = { id = module.vnet_1.id, name = var.mesh1.name }
-  vnet_2              = { id = module.vnet_2.id, name = var.mesh2.name }
+  vnet_1              = { id = module.vnet_1.id, name = var.vnet_mesh1.name }
+  vnet_2              = { id = module.vnet_2.id, name = var.vnet_mesh2.name }
   resource_group_name = var.resource_group_name
 }
 
@@ -38,7 +38,6 @@ module "cluster_1" {
   network_profile     = var.aks_mesh1.network_profile
   vnet_subnet_id      = module.vnet_1.subnet_id
 }
-
 
 module "cluster_2" {
   source              = "./modules/aks"
@@ -112,3 +111,35 @@ module "cilium_2" {
   }
 }
 
+module "cilium_enable_mesh1" {
+  source  = "./modules/cilium-clustermesh"
+  context = var.aks_mesh1.name
+
+  depends_on = [
+    module.cilium_1,
+  ]
+}
+
+module "cilium_enable_mesh2" {
+  source     = "./modules/cilium-clustermesh"
+  context    = var.aks_mesh2.name
+  kubeconfig = "${path.module}/kubeconfig"
+
+  depends_on = [
+    module.cilium_2,
+  ]
+}
+
+resource "terraform_data" "enable_mesh1_mesh2" {
+  provisioner "local-exec" {
+    command = "cilium clustermesh connect --context ${var.aks_mesh1.name} --destination-context ${var.aks_mesh2.name}"
+    environment = {
+      KUBECONFIG = "${path.module}/kubeconfig"
+    }
+  }
+
+  depends_on = [
+    module.cilium_enable_mesh1,
+    module.cilium_enable_mesh2,
+  ]
+}
