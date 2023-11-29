@@ -28,20 +28,20 @@ provider "azurerm" {
 provider "helm" {
   alias = "mesh1"
   kubernetes {
-    host                   = module.cluster_1.host
-    client_certificate     = module.cluster_1.client_certificate
-    client_key             = module.cluster_1.client_key
-    cluster_ca_certificate = module.cluster_1.cluster_ca_certificate
+    host                   = module.aks["mesh1"].host
+    client_certificate     = module.aks["mesh1"].client_certificate
+    client_key             = module.aks["mesh1"].client_key
+    cluster_ca_certificate = module.aks["mesh1"].cluster_ca_certificate
   }
 }
 
 provider "helm" {
   alias = "mesh2"
   kubernetes {
-    host                   = module.cluster_2.host
-    client_certificate     = module.cluster_2.client_certificate
-    client_key             = module.cluster_2.client_key
-    cluster_ca_certificate = module.cluster_2.cluster_ca_certificate
+    host                   = module.aks["mesh2"].host
+    client_certificate     = module.aks["mesh2"].client_certificate
+    client_key             = module.aks["mesh2"].client_key
+    cluster_ca_certificate = module.aks["mesh2"].cluster_ca_certificate
   }
 }
 
