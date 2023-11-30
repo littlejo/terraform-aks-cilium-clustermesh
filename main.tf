@@ -79,6 +79,36 @@ module "cilium_mesh1" {
   }
 }
 
+data "kubernetes_secret" "cilium_ca" {
+  count = var.cilium.mesh1.type == "cilium_custom" ? 1 : 0
+  metadata {
+    name      = "cilium-ca"
+    namespace = "kube-system"
+  }
+
+  depends_on = [
+    module.cilium_mesh1
+  ]
+
+  provider = kubernetes.mesh1
+}
+
+
+resource "kubernetes_secret" "cilium_ca" {
+  count = var.cilium.mesh1.shared_ca && var.cilium.mesh1.type == "cilium_custom" ? 1 : 0
+  metadata {
+    name        = "cilium-ca"
+    namespace   = "kube-system"
+    annotations = data.kubernetes_secret.cilium_ca[0].metadata[0].annotations
+    labels      = data.kubernetes_secret.cilium_ca[0].metadata[0].labels
+  }
+
+  data = data.kubernetes_secret.cilium_ca[0].data
+
+  type     = data.kubernetes_secret.cilium_ca[0].type
+  provider = kubernetes.mesh2
+}
+
 module "cilium_mesh2" {
   count  = var.cilium.mesh2.type == "cilium_custom" ? 1 : 0
   source = "./modules/cilium"
@@ -89,8 +119,7 @@ module "cilium_mesh2" {
   set_values          = var.cilium.mesh2.set_values
 
   depends_on = [
-    local_file.kubeconfig_aks_1,
-    local_file.kubeconfig_aks_2,
+    kubernetes_secret.cilium_ca,
   ]
 
   providers = {
@@ -99,6 +128,7 @@ module "cilium_mesh2" {
 }
 
 module "cilium_enable_mesh1" {
+  count   = var.cilium.mesh1.type == "cilium_custom" ? 1 : 0
   source  = "./modules/cilium-clustermesh"
   context = var.aks.mesh1.name
 
@@ -108,6 +138,7 @@ module "cilium_enable_mesh1" {
 }
 
 module "cilium_enable_mesh2" {
+  count      = var.cilium.mesh2.type == "cilium_custom" ? 1 : 0
   source     = "./modules/cilium-clustermesh"
   context    = var.aks.mesh2.name
   kubeconfig = "${path.module}/kubeconfig"
@@ -118,6 +149,7 @@ module "cilium_enable_mesh2" {
 }
 
 resource "terraform_data" "enable_mesh1_mesh2" {
+  count = var.cilium.mesh1.type == "cilium_custom" && var.cilium.mesh2.type == "cilium_custom" ? 1 : 0
   provisioner "local-exec" {
     command = "cilium clustermesh connect --context ${var.aks.mesh1.name} --destination-context ${var.aks.mesh2.name}"
     environment = {
@@ -130,3 +162,8 @@ resource "terraform_data" "enable_mesh1_mesh2" {
     module.cilium_enable_mesh2,
   ]
 }
+
+
+#output "toto" {
+#  value = data.kubernetes_resource.example
+#}

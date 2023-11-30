@@ -16,6 +16,10 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "1.14.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "2.24.0"
+    }
   }
   required_version = ">= 1.3"
 }
@@ -43,6 +47,22 @@ provider "helm" {
     client_key             = module.aks["mesh2"].client_key
     cluster_ca_certificate = module.aks["mesh2"].cluster_ca_certificate
   }
+}
+
+provider "kubernetes" {
+  alias                  = "mesh1"
+  host                   = module.aks["mesh1"].host
+  client_certificate     = module.aks["mesh1"].client_certificate
+  client_key             = module.aks["mesh1"].client_key
+  cluster_ca_certificate = module.aks["mesh1"].cluster_ca_certificate
+}
+
+provider "kubernetes" {
+  alias                  = "mesh2"
+  host                   = module.aks["mesh2"].host
+  client_certificate     = module.aks["mesh2"].client_certificate
+  client_key             = module.aks["mesh2"].client_key
+  cluster_ca_certificate = module.aks["mesh2"].cluster_ca_certificate
 }
 
 #provider "kubectl" {

@@ -62,6 +62,7 @@ variable "cilium" {
     hubble                 = optional(bool, false)
     hubble-ui              = optional(bool, false)
     gateway-api            = optional(bool, false)
+    shared_ca              = optional(bool, true)
     preflight-version      = optional(string, null)
     upgrade-compatibility  = optional(string, null)
     set_values             = optional(list(object({ name = string, value = string })))
@@ -73,7 +74,12 @@ variable "cilium" {
       kube-proxy-replacement = true
       ebpf-hostrouting       = true
       hubble                 = true
-      set_values             = [{ name = "cluster.id", value = "1" }, { name = "cluster.name", value = "cilium-clustermesh1" }, { name = "ipam.operator.clusterPoolIPv4PodCIDRList", value = "{10.10.0.0/16}" }]
+      shared_ca              = false
+      set_values = [
+        { name = "cluster.id", value = "1" },
+        { name = "cluster.name", value = "cilium-clustermesh1" },
+        { name = "ipam.operator.clusterPoolIPv4PodCIDRList", value = "{10.10.0.0/16}" },
+      ]
     }
     mesh2 = {
       type                   = "cilium_custom" #other option: byocni
@@ -81,7 +87,11 @@ variable "cilium" {
       kube-proxy-replacement = true
       ebpf-hostrouting       = true
       hubble                 = true
-      set_values             = [{ name = "cluster.id", value = "2" }, { name = "cluster.name", value = "cilium-clustermesh2" }, { name = "ipam.operator.clusterPoolIPv4PodCIDRList", value = "{10.20.0.0/16}" }]
+      set_values = [
+        { name = "cluster.id", value = "2" },
+        { name = "cluster.name", value = "cilium-clustermesh2" },
+        { name = "ipam.operator.clusterPoolIPv4PodCIDRList", value = "{10.20.0.0/16}" }
+      ]
     }
   }
 }

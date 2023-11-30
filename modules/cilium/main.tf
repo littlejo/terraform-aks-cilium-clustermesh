@@ -3,7 +3,7 @@ resource "terraform_data" "kube_proxy_disable" {
   provisioner "local-exec" {
     command = "kubectl -n kube-system patch daemonset kube-proxy -p '\"spec\": {\"template\": {\"spec\": {\"nodeSelector\": {\"non-existing\": \"true\"}}}}'"
     environment = {
-      KUBECONFIG = "./${var.kubeconfig}"
+      KUBECONFIG = var.kubeconfig
     }
   }
 }
@@ -22,5 +22,17 @@ module "cilium" {
   set_values             = var.set_values
   depends_on = [
     terraform_data.kube_proxy_disable,
+  ]
+}
+
+resource "terraform_data" "wait" {
+  provisioner "local-exec" {
+    command = "cilium status --wait"
+    environment = {
+      KUBECONFIG = var.kubeconfig
+    }
+  }
+  depends_on = [
+    module.cilium
   ]
 }
