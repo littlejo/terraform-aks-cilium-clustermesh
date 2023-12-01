@@ -5,6 +5,7 @@ locals {
 }
 
 data "kubernetes_secret" "cilium_ca" {
+  count = local.w == "mesh1" ? 0 : 1
   metadata {
     name      = "cilium-ca"
     namespace = "kube-system"
@@ -42,23 +43,24 @@ resource "local_file" "kubeconfig_aks_share" {
 }
 
 resource "kubernetes_secret" "cilium_ca" {
+  count = local.w == "mesh1" ? 0 : 1
   metadata {
     name        = "cilium-ca"
     namespace   = "kube-system"
-    annotations = data.kubernetes_secret.cilium_ca.metadata[0].annotations
-    labels      = data.kubernetes_secret.cilium_ca.metadata[0].labels
+    annotations = data.kubernetes_secret.cilium_ca[0].metadata[0].annotations
+    labels      = data.kubernetes_secret.cilium_ca[0].metadata[0].labels
   }
 
-  data = data.kubernetes_secret.cilium_ca.data
+  data = data.kubernetes_secret.cilium_ca[0].data
 
-  type     = data.kubernetes_secret.cilium_ca.type
+  type     = data.kubernetes_secret.cilium_ca[0].type
   provider = kubernetes.mesh2
 }
 
-module "cilium_mesh2" {
+module "cilium_mesh" {
   source = "../../modules/cilium"
 
-  kubeconfig = "${path.module}/${var.aks.mesh2.kubeconfig}"
+  kubeconfig = "${path.module}/${var.aks[local.w].kubeconfig}"
 
   resource_group_name = var.resource_group_name
   set_values          = var.cilium[local.w].set_values
@@ -72,13 +74,13 @@ module "cilium_mesh2" {
   }
 }
 
-module "cilium_enable_mesh2" {
+module "cilium_enable_mesh" {
   source     = "../../modules/cilium-clustermesh"
   context    = var.aks[local.w].name
   kubeconfig = "${path.module}/${var.aks[local.w].kubeconfig}"
 
   depends_on = [
-    module.cilium_mesh2,
+    module.cilium_mesh,
   ]
 }
 
@@ -91,20 +93,20 @@ resource "terraform_data" "kubeconfig_global_2" {
   }
 
   depends_on = [
-    module.cilium_enable_mesh2
+    module.cilium_enable_mesh
   ]
 }
 
-resource "terraform_data" "enable_mesh_mesh" {
-  provisioner "local-exec" {
-    command = "cilium clustermesh connect --context ${var.aks.mesh1.name} --destination-context ${var.aks[local.w].name}"
-    environment = {
-      KUBECONFIG = "${path.module}/kubeconfig"
-    }
-  }
-
-  depends_on = [
-    terraform_data.kubeconfig_global_2
-  ]
-}
+#resource "terraform_data" "enable_mesh_mesh" {
+#  provisioner "local-exec" {
+#    command = "cilium clustermesh connect --context ${var.aks.mesh1.name} --destination-context ${var.aks[local.w].name}"
+#    environment = {
+#      KUBECONFIG = "${path.module}/kubeconfig"
+#    }
+#  }
+#
+#  depends_on = [
+#    terraform_data.kubeconfig_global_2
+#  ]
+#}
 

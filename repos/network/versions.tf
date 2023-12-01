@@ -28,21 +28,3 @@ provider "azurerm" {
   skip_provider_registration = true
   features {}
 }
-
-provider "helm" {
-  alias = "mesh1"
-  kubernetes {
-    host                   = module.aks.host
-    client_certificate     = module.aks.client_certificate
-    client_key             = module.aks.client_key
-    cluster_ca_certificate = module.aks.cluster_ca_certificate
-  }
-}
-
-provider "kubernetes" {
-  alias                  = "mesh1"
-  host                   = module.aks.host
-  client_certificate     = module.aks.client_certificate
-  client_key             = module.aks.client_key
-  cluster_ca_certificate = module.aks.cluster_ca_certificate
-}
